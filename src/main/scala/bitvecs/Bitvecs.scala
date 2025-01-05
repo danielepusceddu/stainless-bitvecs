@@ -296,7 +296,9 @@ implicit inline def BVToBigInt[
       println("Should not be negative")
       storageOps.toBigInt(bv.underlying)
     else // value is negative in storage but we want positive
-      (BigInt(1) << (len.value - 1)) + (storageOps.toBigInt(bv.underlying) & ((BigInt(1) << (len.value - 1)) - 1))
+      (BigInt(1) << (len.value - 1)) + (storageOps.toBigInt(
+        bv.underlying
+      ) & ((BigInt(1) << (len.value - 1)) - 1))
   else // we don't have to "correct" the sign bit...
     storageOps.toBigInt(bv.underlying)
 }
@@ -501,12 +503,8 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
     }
     .mkString
     .reverse
-
-  // override def equals(that: Any): Boolean = if that.isInstanceOf[BV[L, S]] then
-  //   underlying.equals(that.asInstanceOf[BV[L, S]].underlying)
-  // else false
 }
 
 @main def run(): Unit = {
-
+  val test: BV[-1, true] = 10
 }
