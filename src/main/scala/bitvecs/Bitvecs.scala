@@ -472,6 +472,12 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
     underlying == other.underlying
   }
 
+  override def equals(obj: Any): Boolean = obj match {
+    case that: BV[_, _] =>
+      this.underlying == that.underlying
+    case _ => false
+  }
+
   inline def apply(index: Int): Boolean = {
     if index < len.value then
       (underlying & toStorage(1) << index) != toStorage(0)
