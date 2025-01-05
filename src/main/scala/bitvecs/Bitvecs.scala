@@ -502,15 +502,11 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
     .mkString
     .reverse
 
-  override def equals(that: Any): Boolean = if that.isInstanceOf[BV[L, S]] then
-    underlying.equals(that.asInstanceOf[BV[L, S]].underlying)
-  else false
+  // override def equals(that: Any): Boolean = if that.isInstanceOf[BV[L, S]] then
+  //   underlying.equals(that.asInstanceOf[BV[L, S]].underlying)
+  // else false
 }
 
 @main def run(): Unit = {
-  val x: BV[64, false] = BigInt("18446744073709551614")
-  println(x: BigInt)
-  //
-  // val y: BV[64, false] = 2
-  // val z = x / y
+
 }
