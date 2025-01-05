@@ -1,6 +1,6 @@
 package bitvecs
 
-class BitvecsSuite extends munit.FunSuite {
+class AdditionTests extends munit.FunSuite {
 
   // Unsigned 8-bit tests
   test("Unsigned 8-bit addition without overflow") {
@@ -25,14 +25,6 @@ class BitvecsSuite extends munit.FunSuite {
     val y: BV[8, true] = 1
     val z = x + y
     val expected: BV[8, true] = -128
-    assertEquals(z, expected)
-  }
-
-  test("Signed 8-bit subtraction with underflow") {
-    val x: BV[8, true] = -128
-    val y: BV[8, true] = 1
-    val z = x - y
-    val expected: BV[8, true] = 127
     assertEquals(z, expected)
   }
 
@@ -80,15 +72,6 @@ class BitvecsSuite extends munit.FunSuite {
     assertEquals(z, expected)
   }
 
-  // Signed 72-bit tests
-  test("Signed 72-bit subtraction with underflow") {
-    val x: BV[72, true] = BigInt("-2361183241434822606848")
-    val y: BV[72, true] = BigInt("1")
-    val z = x - y
-    val expected: BV[72, true] = BigInt("2361183241434822606847")
-    assertEquals(z, expected)
-  }
-
   // Unsigned 96-bit tests
   test("Unsigned 96-bit addition with overflow") {
     val x: BV[96, false] = BigInt("79228162514264337593543950335")
@@ -112,14 +95,6 @@ class BitvecsSuite extends munit.FunSuite {
     val y: BV[37, false] = 1
     val z = x + y
     val expected: BV[37, false] = BigInt("68719476736")
-    assertEquals(z, expected)
-  }
-
-  test("Signed 37-bit subtraction with underflow") {
-    val x: BV[37, true] = BigInt("-68719476736")
-    val y: BV[37, true] = 1
-    val z = x - y
-    val expected: BV[37, true] = BigInt("68719476735")
     assertEquals(z, expected)
   }
 }
