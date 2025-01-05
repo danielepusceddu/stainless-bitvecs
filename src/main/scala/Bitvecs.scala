@@ -190,31 +190,36 @@ implicit inline def intToBV[
     S <: (true | false) & Singleton
 ](i: Int)(using
     nat: Natural[L] =:= Nat,
-    len: ValueOf[L],
-    signed: ValueOf[S],
+    // len: ValueOf[L],
+    // signed: ValueOf[S],
     storageOps: BVStorageOps[L, Storage[L]],
     toStorage: ToStorage[L, Storage[L]]
 ): BV[L, S] =
-  inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+  inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+      L
+    ] == 32 || constValue[L] == 64
   then BV[L, S](toStorage(i))
-  else BV[L, S](toStorage(i) & ((toStorage(1) << len.value) - toStorage(1)))
+  else BV[L, S](toStorage(i) & ((toStorage(1) << constValue[L]) - toStorage(1)))
 
 implicit inline def bigIntToBV[
     L <: Int & Singleton,
     S <: (true | false) & Singleton
 ](i: BigInt)(using
     nat: Natural[L] =:= Nat,
-    len: ValueOf[L],
-    signed: ValueOf[S],
+    // len: ValueOf[L],
+    // signed: ValueOf[S],
     storageOps: BVStorageOps[L, Storage[L]],
     toStorage: ToStorage[L, Storage[L]]
 ): BV[L, S] = {
   val bv =
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](toStorage(i))
-    else BV[L, S](toStorage(i) & ((toStorage(1) << len.value) - toStorage(1)))
+    else
+      BV[L, S](toStorage(i) & ((toStorage(1) << constValue[L]) - toStorage(1)))
 
-  inline if signed.value && len.value > 64 then
+  inline if constValue[S] && constValue[L] > 64 then
     // this unfortunately has to happen as we don't have a way to "tell" the
     // bv that its negative...
     if (bv.underlying & bv.signBit) != toStorage(0) then
@@ -224,24 +229,26 @@ implicit inline def bigIntToBV[
 }
 
 inline implicit def longIntToBV[
-    L <: Int & Singleton,
-    S <: (true | false) & Singleton
+    L <: Int, // & Singleton,
+    S <: (true | false) // & Singleton
 ](
     i: Long
 )(using
     nat: Natural[L] =:= Nat,
-    len: ValueOf[L],
-    signed: ValueOf[S],
+    // len: ValueOf[L],
+    // signed: ValueOf[S],
     storageOps: BVStorageOps[L, Storage[L]],
     toStorage: ToStorage[L, Storage[L]]
 ): BV[L, S] =
-  inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+  inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+      L
+    ] == 32 || constValue[L] == 64
   then BV[L, S](toStorage(i))
-  else BV[L, S](toStorage(i) & ((toStorage(1) << len.value) - toStorage(1)))
+  else BV[L, S](toStorage(i) & ((toStorage(1) << constValue[L]) - toStorage(1)))
 
 implicit inline def BVToInt[
-    L <: Int & Singleton,
-    S <: (true | false) & Singleton
+    L <: Int, // & Singleton,
+    S <: (true | false) // & Singleton
 ](bv: BV[L, S])(using
     nat: Natural[L] =:= Nat,
     len: ValueOf[L],
@@ -249,11 +256,11 @@ implicit inline def BVToInt[
     storageOps: BVStorageOps[L, Storage[L]],
     toStorage: ToStorage[L, Storage[L]]
 ): Int = {
-  inline if len.value > 64 then
+  inline if constValue[L] > 64 then
     storageOps.toInt(
       bv.underlying
     ) // we always store the "correct" value in bigint
-  else inline if !signed.value || len.value == 32
+  else inline if !constValue[S] || constValue[L] == 32
   then
     storageOps.toInt(
       bv.underlying
@@ -261,26 +268,28 @@ implicit inline def BVToInt[
   else if (bv.underlying & bv.signBit) == toStorage(0) then
     storageOps.toInt(bv.underlying)
   else
-    val mask = ~((1 << len.value) - 1)
+    val mask = ~((1 << constValue[L]) - 1)
     -(~(storageOps.toInt(bv.underlying) | mask) + 1)
 }
 
 implicit inline def BVToBigInt[
-    L <: Int & Singleton,
-    S <: (true | false) & Singleton
+    L <: Int, // & Singleton,
+    S <: (true | false) // & Singleton
 ](bv: BV[L, S])(using
     nat: Natural[L] =:= Nat,
-    len: ValueOf[L],
-    signed: ValueOf[S],
+    // len: ValueOf[L],
+    // signed: ValueOf[S],
     storageOps: BVStorageOps[L, Storage[L]],
     toStorage: ToStorage[L, Storage[L]]
 ): BigInt = {
-  inline if len.value > 64 then
+  inline if constValue[L] > 64 then
     storageOps.toInt(
       bv.underlying
     ) // we always store the "correct" value in bigint
-  else inline if signed.value then
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+  else inline if constValue[S] then
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then
       storageOps.toBigInt(
         bv.underlying
@@ -288,14 +297,16 @@ implicit inline def BVToBigInt[
     else if (bv.underlying & bv.signBit) == toStorage(0) then // positive
       storageOps.toBigInt(bv.underlying)
     else
-      val mask = ~((1 << len.value) - 1)
+      val mask = ~((1 << constValue[L]) - 1)
       -(~(storageOps.toBigInt(bv.underlying) | mask) + 1)
-  else inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+  else inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+      L
+    ] == 32 || constValue[L] == 64
   then
     if (bv.underlying & bv.signBit) == toStorage(0) then // positive anyways
       storageOps.toBigInt(bv.underlying)
     else // value is negative in storage but we want positive
-      (BigInt(1) << (len.value - 1)) | storageOps.toBigInt(bv.underlying)
+      (BigInt(1) << (constValue[L] - 1)) | storageOps.toBigInt(bv.underlying)
   else // we don't have to "correct" the sign bit...
     storageOps.toBigInt(bv.underlying)
 }
@@ -308,17 +319,21 @@ implicit inline def BVToBigInt[
 //   storageOps: BVStorageOps[L, Storage[L]],
 //   toStorage: ToStorage[L, Storage[L]]): BV[L, S] = BV[L, S](toStorage(i))
 //
-class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
+class BV[L <: Int /* & Singleton */, S <: (true | false) /* & Singleton */ ](
+    using
     nat: Natural[L] =:= Nat,
-    signed: ValueOf[S],
-    len: ValueOf[L],
+    // signed: ValueOf[S],
+    // len: ValueOf[L],
     storageOps: BVStorageOps[L, Storage[L]],
     toStorage: ToStorage[L, Storage[L]]
 )(private[bitvecs] val underlying: Storage[L]) {
 
-  private[bitvecs] inline def modulus = toStorage(1) << len.value
-  private[bitvecs] inline def mask = (toStorage(1) << len.value) - toStorage(1)
-  private[bitvecs] inline def signBit = toStorage(1) << (len.value - 1)
+  private[bitvecs] inline def modulus = toStorage(1) << constValue[L]
+  private[bitvecs] inline def mask =
+    (toStorage(1) << constValue[L]) - toStorage(1)
+  private[bitvecs] inline def signBit = toStorage(1) << (constValue[L] - 1)
+
+  // private val bitLen = constValue[L]
 
   println(s"Value of storage is $underlying")
 
@@ -331,37 +346,43 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
   // then stores
 
   inline def +(other: BV[L, S]): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying + other.underlying)
     else
       val storage = (underlying + other.underlying) & mask
       // only have to take care here if BigInt storage is used & we are signed
 
-      inline if len.value > 64 && signed.value then
+      inline if constValue[L] > 64 && constValue[S] then
         if (storage & signBit) != toStorage(0) then BV[L, S](storage - modulus)
         else BV[L, S](storage)
       else BV[L, S](storage)
   }
 
   inline def -(other: BV[L, S]): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying - other.underlying)
     else
       val storage = (underlying - other.underlying) & mask
 
-      inline if len.value > 64 && signed.value then
+      inline if constValue[L] > 64 && constValue[S] then
         if (storage & signBit) != toStorage(0) then BV[L, S](storage - modulus)
         else BV[L, S](storage)
       else BV[L, S](storage)
   }
 
   inline def *(other: BV[L, S]): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying * other.underlying)
     else
       val storage = (underlying * other.underlying) & mask
 
-      inline if len.value > 64 && signed.value then
+      inline if constValue[L] > 64 && constValue[S] then
         if (storage & signBit) != toStorage(0) then
           BV[L, S](((storage ^ mask) + toStorage(1)) * toStorage(-1))
         else BV[L, S](storage)
@@ -369,10 +390,12 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
   }
 
   inline def /(other: BV[L, S]): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying / other.underlying)
-    else inline if signed.value then
-      inline if len.value > 64 then
+    else inline if constValue[S] then
+      inline if constValue[L] > 64 then
         val storage = (underlying / other.underlying) & mask
 
         if (storage & signBit) != toStorage(0) then
@@ -391,10 +414,12 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
   }
 
   inline def %(other: BV[L, S]): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying % other.underlying)
-    else inline if signed.value then
-      inline if len.value > 64 then
+    else inline if constValue[S] then
+      inline if constValue[L] > 64 then
         val storage = (underlying % other.underlying) & mask
 
         if (storage & signBit) != toStorage(0) then
@@ -418,7 +443,9 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
   }
 
   inline def <<(by: Int): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying << by)
     else BV[L, S]((underlying << by) & mask)
   }
@@ -432,9 +459,11 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
     // former MSB is set and if yes, we have to "fill" with 1's (if the
     // underlying storage is larger the actual MSB could be unset leading to the
     // wrong shift... )
-    inline if signed.value || len.value > 64
+    inline if constValue[S] || constValue[L] > 64
     then // BigInt just takes care of shifts..
-      inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value >= 64
+      inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+          L
+        ] == 32 || constValue[L] >= 64
       then
         // here our storage luckily matches with the len of the bv, so we can
         // just ignore everything
@@ -443,10 +472,11 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
         // in this case the MSB of our BV does not line up with the MSB of the
         // underlying storage.. So we have to "fill" the MSBs
         val negShiftedMask =
-          ~((toStorage(1) << max(len.value - by, 0)) - toStorage(1)) & mask
+          ~((toStorage(1) << max(constValue[L] - by, 0)) - toStorage(1)) & mask
         BV[L, S]((underlying >> by) | negShiftedMask)
     else
-      val shiftedMask = (toStorage(1) << max(len.value - by, 0)) - toStorage(1)
+      val shiftedMask =
+        (toStorage(1) << max(constValue[L] - by, 0)) - toStorage(1)
       println(s"value of shiftedMask is $shiftedMask")
       BV[L, S]((underlying >> by) & shiftedMask)
   }
@@ -457,13 +487,18 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
   }
 
   inline def |(other: BV[L, S]): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying | other.underlying)
     else BV[L, S]((underlying | other.underlying) & mask)
+    // BV[L, S](masked_or[L, S](underlying, other.underlying, mask))
   }
 
   inline def ^(other: BV[L, S]): BV[L, S] = {
-    inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
+    inline if constValue[L] == 8 || constValue[L] == 16 || constValue[
+        L
+      ] == 32 || constValue[L] == 64
     then BV[L, S](underlying ^ other.underlying)
     else BV[L, S]((underlying ^ other.underlying) & mask)
   }
@@ -472,27 +507,60 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
     underlying == other.underlying
   }
 
-  inline def apply(index: Int): Boolean = {
-    if index < len.value then
-      (underlying & toStorage(1) << index) != toStorage(0)
-    else throw new IllegalArgumentException("Index out of range")
-  }
-
-  override def toString(): String = (0 to len.value - 1)
-    .map { idx =>
-      if this(idx) then "1" else "0"
-    }
-    .mkString
-    .reverse
+  // inline def apply(index: Int): Boolean = {
+  //   if index < bitLen then (underlying & toStorage(1) << index) != toStorage(0)
+  //   else throw new IllegalArgumentException("Index out of range")
+  // }
+  //
+  // override def toString(): String = (0 to bitLen - 1)
+  //   .map { idx =>
+  //     if this(idx) then "1" else "0"
+  //   }
+  //   .mkString
+  //   .reverse
 }
 
+// This does not work in current scala when used in a none-inline context.
+// Unfortunately, "L" is not a constant type, which leads to us not being able
+// to take the value of it at compile time. This is a very similiar issue that
+// arose with the usage of macros.
+//
+// From reading the documentation and so on, I would thing that this is in fact
+// the goal of these Type literals, otherwise it would make very little sense,
+// but the only way to get this to work is, unfortunately, to use inline
+// everywhere. This then makes the compiler realize that yes, it is "const"
+// enough, but has the same disadvangate we wanted to get rid of, inlinening
+// everywhere..
+// inline def masked_or[L <: Int, S <: (true | false) & Singleton](
+//     a: Storage[L],
+//     b: Storage[L],
+//     mask: Storage[L]
+// )(using
+//     nat: Natural[L] =:= Nat,
+//     signed: ValueOf[S],
+//     // len: ValueOf[L],
+//     storageOps: BVStorageOps[L, Storage[L]]
+// ): Storage[L] = {
+//   inline if constValue[
+//       L
+//     ] == 8 // || len.value == 16 || len.value == 32 || len.value == 64
+//   then a | b
+//   else (a | b) & mask
+// }
+//
 @main def run(): Unit = {
-  // val a: BV[8, false] = 5
-  //
-  // val b: BV[8, false] = -6
-  //
-  // println((a + b): BigInt)
-  //
-  val expected: BV[64, false] = BigInt("9223372036854775808")
-  println(expected)
+  val a: BV[32, false] = 0xdead
+  val b: BV[32, false] = 0xbeef
+
+  val c = a | b
+  // println(c)
+  println(c: Int)
+
+  val a1: BV[31, false] = 0xdead
+  val b1: BV[31, false] = 0xbeef
+
+  val c1 = a1 | b1
+  // println(c)
+  println(c1: Int)
+
 }
