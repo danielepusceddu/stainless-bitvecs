@@ -293,9 +293,10 @@ implicit inline def BVToBigInt[
   else inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
   then
     if (bv.underlying & bv.signBit) == toStorage(0) then // positive anyways
+      println("Should not be negative")
       storageOps.toBigInt(bv.underlying)
     else // value is negative in storage but we want positive
-      (BigInt(1) << (len.value - 1)) | storageOps.toBigInt(bv.underlying)
+      (BigInt(1) << (len.value - 1)) + (storageOps.toBigInt(bv.underlying) & ((BigInt(1) << (len.value - 1)) - 1))
   else // we don't have to "correct" the sign bit...
     storageOps.toBigInt(bv.underlying)
 }
@@ -370,7 +371,15 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
 
   inline def /(other: BV[L, S]): BV[L, S] = {
     inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
-    then BV[L, S](underlying / other.underlying)
+    then
+      inline if signed.value then BV[L, S](underlying / other.underlying)
+      else // this isnt nice but it works
+        val thisBI: BigInt = this
+        val otherBI: BigInt = other
+        val result = thisBI / otherBI
+        println(s"this is $thisBI, other is $otherBI, result is $result")
+        // (this: BigInt) / (other: BigInt)
+        result
     else inline if signed.value then
       inline if len.value > 64 then
         val storage = (underlying / other.underlying) & mask
@@ -392,7 +401,9 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
 
   inline def %(other: BV[L, S]): BV[L, S] = {
     inline if len.value == 8 || len.value == 16 || len.value == 32 || len.value == 64
-    then BV[L, S](underlying % other.underlying)
+    then
+      inline if signed.value then BV[L, S](underlying % other.underlying)
+      else (this: BigInt) % (other: BigInt)
     else inline if signed.value then
       inline if len.value > 64 then
         val storage = (underlying % other.underlying) & mask
@@ -490,15 +501,16 @@ class BV[L <: Int & Singleton, S <: (true | false) & Singleton](using
     }
     .mkString
     .reverse
+
+  override def equals(that: Any): Boolean = if that.isInstanceOf[BV[L, S]] then
+    underlying.equals(that.asInstanceOf[BV[L, S]].underlying)
+  else false
 }
 
 @main def run(): Unit = {
-  // val a: BV[8, false] = 5
+  val x: BV[64, false] = BigInt("18446744073709551614")
+  println(x: BigInt)
   //
-  // val b: BV[8, false] = -6
-  //
-  // println((a + b): BigInt)
-  //
-  val expected: BV[64, false] = BigInt("9223372036854775808")
-  println(expected)
+  // val y: BV[64, false] = 2
+  // val z = x / y
 }
