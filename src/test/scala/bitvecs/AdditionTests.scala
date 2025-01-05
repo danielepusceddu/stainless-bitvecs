@@ -97,8 +97,6 @@ class AdditionTests extends munit.FunSuite {
     val expected: BV[37, false] = BigInt("68719476736")
     assertEquals(z, expected)
   }
-<<<<<<< HEAD:src/test/scala/bitvecs/AdditionTests.scala
-||||||| parent of 08697c7 (added more tests):src/test/scala/bitvecs/BitvecsTest.scala
 
   test("Signed 37-bit subtraction with underflow") {
     val x: BV[37, true] = BigInt("-68719476736")
@@ -107,7 +105,6 @@ class AdditionTests extends munit.FunSuite {
     val expected: BV[37, true] = BigInt("68719476735")
     assertEquals(z, expected)
   }
-=======
 
   test("Signed 37-bit subtraction with underflow") {
     val x: BV[37, true] = BigInt("-68719476736")
